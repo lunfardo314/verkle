@@ -13,6 +13,7 @@ type KVStore interface {
 	Has(k []byte) bool
 	Partition(prefix string) KVStore
 	Keys() []string
+	Size() int
 }
 
 type kvStoreSimple struct {
@@ -77,6 +78,10 @@ func (kvs *kvStoreSimple) Keys() []string {
 	return ret
 }
 
+func (kvs *kvStoreSimple) Size() int {
+	return len(kvs.store)
+}
+
 type partition struct {
 	store  KVStore
 	prefix string
@@ -116,4 +121,14 @@ func (p *partition) Keys() []string {
 	sort.Strings(ret)
 	return ret
 
+}
+
+func (p *partition) Size() int {
+	var ret int
+	for _, k := range p.store.Keys() {
+		if strings.HasPrefix(k, p.prefix) {
+			ret++
+		}
+	}
+	return ret
 }

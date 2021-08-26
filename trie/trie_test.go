@@ -1,7 +1,6 @@
 package trie
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -46,6 +45,7 @@ func TestString(t *testing.T) {
 	t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 }
 
+//nolint:funlen
 func TestTrie1(t *testing.T) {
 	suite := bn256.NewSuite()
 	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
@@ -262,7 +262,47 @@ func TestTrie3(t *testing.T) {
 			require.NoError(t, err)
 		}
 	})
+}
 
+func TestTrieStats(t *testing.T) {
+	suite := bn256.NewSuite()
+	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
+	require.NoError(t, err)
+	t.Run("1", func(t *testing.T) {
+		const numKeys = 1000
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := genKeys(numKeys)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := updateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, hasAllKeys(st, kpairs))
+
+		statsKVValues := GetStatsKVStore(st.values)
+		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
+			statsKVValues.NumKeys, statsKVValues.AvgKeyLen, statsKVValues.AvgValueSize)
+		for i, n := range statsKVValues.KeyLen {
+			t.Logf("      len %d: %d", i, n)
+		}
+		statsKVTrie := GetStatsKVStore(st.trie)
+		t.Logf("TRIE KV:\n    trie keys: %d\n    avg trie key len: %f\n    avg value size: %f\n",
+			statsKVTrie.NumKeys, statsKVTrie.AvgKeyLen, statsKVTrie.AvgValueSize)
+		for i, n := range statsKVTrie.KeyLen {
+			t.Logf("      len %d: %d", i, n)
+		}
+		statsTrie := GetStatsTrie(st)
+		t.Logf("TRIE:\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
+			statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
+		for i, nch := range statsTrie.NumChildren {
+			if nch != 0 {
+				t.Logf("     %d: %d", i, nch)
+			}
+		}
+		//t.Logf("\nTRIE: \n%s\n", st.StringTrie())
+	})
 }
 
 type kvpair struct {
@@ -314,13 +354,22 @@ func genKeys(n int) []*kvpair {
 	ret := make([]*kvpair, n)
 	rand.Seed(time.Now().UnixNano())
 	for i := range ret {
-		r := rand.Intn(50)
+		r := rand.Intn(70)
 		buf := make([]byte, r+1)
 		rand.Read(buf)
 		ret[i] = &kvpair{
-			key:   hex.EncodeToString(buf),
+			key:   string(buf), // hex.EncodeToString(buf),
 			value: fmt.Sprintf("%d", i),
 		}
 	}
 	return ret
+}
+
+func hasAllKeys(st *State, kvpairs []*kvpair) bool {
+	for _, kvp := range kvpairs {
+		if !st.values.Has([]byte(kvp.key)) {
+			return false
+		}
+	}
+	return true
 }

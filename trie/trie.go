@@ -309,3 +309,75 @@ func (st *State) StringTrie() string {
 	}
 	return ret
 }
+
+type StatsKVStore struct {
+	NumKeys      int
+	AvgKeyLen    float64
+	KeyLen       []int
+	AvgValueSize float64
+}
+
+func GetStatsKVStore(kvs KVStore) *StatsKVStore {
+	ret := &StatsKVStore{}
+	kl := make(map[int]int)
+	maxLen := 0
+	sumKeyLen := 0
+	sumValueLen := 0
+	for _, k := range kvs.Keys() {
+		ret.NumKeys++
+		sumKeyLen += len(k)
+		n := kl[len(k)]
+		kl[len(k)] = n + 1
+		if len(k) > maxLen {
+			maxLen = len(k)
+		}
+		value, ok := kvs.Get([]byte(k))
+		if !ok {
+			panic("key not found")
+		}
+		sumValueLen += len(value)
+	}
+	ret.KeyLen = make([]int, maxLen+1)
+	for l, n := range kl {
+		ret.KeyLen[l] = n
+	}
+	ret.AvgKeyLen = float64(sumKeyLen) / float64(ret.NumKeys)
+	ret.AvgValueSize = float64(sumValueLen) / float64(ret.NumKeys)
+	return ret
+}
+
+type StatsTrie struct {
+	NumNodes       int
+	AvgNumChildren float64
+	NumChildren    [258]int
+	OnlyTerminal   int
+}
+
+func GetStatsTrie(st *State) *StatsTrie {
+	ret := &StatsTrie{}
+	sumChildren := 0
+
+	for _, k := range st.trie.Keys() {
+		ret.NumNodes++
+		node, ok := st.GetNode([]byte(k))
+		if !ok {
+			panic("can't get node")
+		}
+		numCh := 0
+		for _, ch := range node.children {
+			if ch != nil {
+				numCh++
+			}
+		}
+		if node.terminalValue != nil {
+			if numCh == 0 {
+				ret.OnlyTerminal++
+			}
+			numCh++
+		}
+		ret.NumChildren[numCh]++
+		sumChildren += numCh
+	}
+	ret.AvgNumChildren = float64(sumChildren) / float64(ret.NumNodes)
+	return ret
+}
