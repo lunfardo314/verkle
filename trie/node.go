@@ -11,9 +11,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-const MaxKeyFragmentSize = 256
-
-// Node is a node of the verkle trie
+// Node is a node of the 257-ary verkle trie
 type Node struct {
 	pathFragment  []byte
 	children      [256]kyber.Point
@@ -54,6 +52,7 @@ func (n *Node) Commit(ts *kzg.TrustedSetup) kyber.Point {
 	return ts.Commit(vect[:])
 }
 
+// Vector extracts vector from the node
 func (n *Node) Vector(ts *kzg.TrustedSetup, ret *[257]kyber.Scalar) {
 	for i, p := range n.children {
 		if p == nil {
@@ -69,6 +68,7 @@ func (n *Node) Vector(ts *kzg.TrustedSetup, ret *[257]kyber.Scalar) {
 	ret[256] = n.terminalValue
 }
 
+// proofSpot calculates proof that the vector of the node has certain value at the position i
 func (n *Node) proofSpot(ts *kzg.TrustedSetup, i int) (kyber.Point, kyber.Scalar) {
 	i = i % 257
 	var vect [257]kyber.Scalar

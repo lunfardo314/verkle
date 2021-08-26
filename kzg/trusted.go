@@ -13,37 +13,33 @@ import (
 )
 
 // TrustedSetup is a trusted setup for KZG calculations with degree D.
-// It includes roots of unity for the scalar field and values on G1 and G2 curves which are pre-calculated
-// from the secret. The secret itself must be destroyed immediately after trusted setup is generated.
-// The trusted setup is a public value. Normally it is stored as a public constant or file and is loaded from there.
+// The domain of Lagrange polynomials is either defined by powers of omega, assuming omega^i != 1 for any 0<=i<D
+// or, of omega == 0, it is 0, 1, 2, ..., D-1
+// The secret itself must be destroyed immediately after trusted setup is generated.
+// The trusted setup is a public value stored for example in a file.
 // It is impossible to restore secret from the trusted setup
 // [x]1 means a projection of scalar x to the G1 curve. [x]1 = xG, where G is the generating element
 // [x]2 means a projection of scalar x to the G2 curve. [x]2 = xH, where H is the generating element
 type TrustedSetup struct {
 	Suite         *bn256.Suite
 	D             uint16
-	Omega         kyber.Scalar  // persistent. omega: a primitive root of unity of the field. If omega==0, natural domain 0,1,2,.. is used
+	Omega         kyber.Scalar  // persistent
 	LagrangeBasis []kyber.Point // persistent. TLi = [l<i>(secret)]1
 	Diff2         []kyber.Point // persistent
-	// auxiliary values
-	// precalc
+	// auxiliary, precalculated values
 	Domain        []kyber.Scalar // non-persistent. if omega != 0, domain_i =  omega^i, otherwise domain_i = i.
-	AprimeDomainI []kyber.Scalar
-	ZeroG1        kyber.Scalar
-	OneG1         kyber.Scalar
-	NullPointG1   kyber.Point
-	// only not nil if omega == nil (onl for natural domain)
-	precalc *precalculated
+	AprimeDomainI []kyber.Scalar // A'(i)
+	precalc       *precalculated // only not nil if omega == nil (onl for natural domain)
+	ZeroG1        kyber.Scalar   // aux
+	OneG1         kyber.Scalar   // aux
 }
 
+// used if omega == 0, i.e. for the natural domain
 type precalculated struct {
-	// used if omega == 0, natural domain
-	// 1/(i-m). Array size is 2d-2
-	// to find index for 1/(i-m) is (i-m)+d-1, from 0 to 2d-2. If i==m, index will contain nil
+	// 1/(i-m). Array size is 2d-1. To find index for 1/(i-m) is (i-m)+d-1, from 0 to 2d-1. If i==m, index will contain nil
 	invsub []kyber.Scalar
-	// ta[m][j] = (aprime(m)/aprime(j))(1/(m-j). Nil if m == j
-	ta [][]kyber.Scalar
-	tk []kyber.Scalar
+	ta     [][]kyber.Scalar // ta[m][j] = (aprime(m)/aprime(j))(1/(m-j). Nil if m == j
+	tk     []kyber.Scalar   // tk[m] = sum_{j!=m}ta[m][j]
 }
 
 var (
@@ -75,13 +71,11 @@ func (sd *TrustedSetup) init(d uint16) {
 	}
 	sd.ZeroG1 = sd.Suite.G1().Scalar().Zero()
 	sd.OneG1 = sd.Suite.G1().Scalar().One()
-	sd.NullPointG1 = sd.Suite.G1().Point().Null()
 }
 
 // TrustedSetupFromSecretPowers calculates TrustedSetup from secret and omega
 // It uses powers of the omega as a domain for Lagrange basis
 // Only used once after what secret must be destroyed
-// The trusted setup does not contain any secret
 func TrustedSetupFromSecretPowers(suite *bn256.Suite, d uint16, omega, secret kyber.Scalar) (*TrustedSetup, error) {
 	ret := newTrustedSetup(suite)
 	ret.init(d)
@@ -214,7 +208,7 @@ func (sd *TrustedSetup) generateFromNaturalDomain(secret kyber.Scalar) error {
 		e2.Sub(secret, sd.Domain[i])
 		sd.Diff2[i].Mul(e2, nil)
 	}
-	sd.Precalc()
+	sd.precalculate()
 	return nil
 }
 
@@ -301,18 +295,18 @@ func (sd *TrustedSetup) read(r io.Reader) error {
 	return nil
 }
 
-func (sd *TrustedSetup) TA(m, j int, ret kyber.Scalar) kyber.Scalar {
+func (sd *TrustedSetup) ta(m, j int, ret kyber.Scalar) kyber.Scalar {
 	if sd.precalc != nil {
 		ret.Set(sd.precalc.ta[m][j])
 		return ret
 	}
-	sd.InvSub(m, j, ret)
+	sd.invsub(m, j, ret)
 	ret.Mul(ret, sd.AprimeDomainI[m])
 	ret.Div(ret, sd.AprimeDomainI[j])
 	return ret
 }
 
-func (sd *TrustedSetup) TK(m int, ret kyber.Scalar) kyber.Scalar {
+func (sd *TrustedSetup) tk(m int, ret kyber.Scalar) kyber.Scalar {
 	if sd.precalc != nil {
 		ret.Set(sd.precalc.tk[m])
 		return ret
@@ -323,12 +317,12 @@ func (sd *TrustedSetup) TK(m int, ret kyber.Scalar) kyber.Scalar {
 		if j == m {
 			continue
 		}
-		ret.Add(ret, sd.TA(m, j, t))
+		ret.Add(ret, sd.ta(m, j, t))
 	}
 	return ret
 }
 
-func (sd *TrustedSetup) Precalc() {
+func (sd *TrustedSetup) precalculate() {
 	sd.precalc = &precalculated{
 		invsub: make([]kyber.Scalar, sd.D*2-1),
 		ta:     make([][]kyber.Scalar, sd.D),
@@ -357,7 +351,7 @@ func (sd *TrustedSetup) Precalc() {
 			}
 			sd.precalc.ta[m][j] = sd.Suite.G1().Scalar().Set(sd.AprimeDomainI[m])
 			sd.precalc.ta[m][j].Div(sd.precalc.ta[m][j], sd.AprimeDomainI[j])
-			sd.precalc.ta[m][j].Mul(sd.precalc.ta[m][j], sd.InvSub(m, j))
+			sd.precalc.ta[m][j].Mul(sd.precalc.ta[m][j], sd.invsub(m, j))
 		}
 	}
 	for m := range sd.precalc.tk {
@@ -371,7 +365,7 @@ func (sd *TrustedSetup) Precalc() {
 	}
 }
 
-func (sd *TrustedSetup) InvSub(m, j int, set ...kyber.Scalar) kyber.Scalar {
+func (sd *TrustedSetup) invsub(m, j int, set ...kyber.Scalar) kyber.Scalar {
 	if sd.precalc == nil {
 		var ret kyber.Scalar
 		if len(set) > 0 {
@@ -383,20 +377,9 @@ func (sd *TrustedSetup) InvSub(m, j int, set ...kyber.Scalar) kyber.Scalar {
 		ret.Inv(ret)
 		return ret
 	}
-	if sd.precalc != nil {
-		idx := int(sd.D) - 1 + m - j
-		if len(set) > 0 {
-			set[0].Set(sd.precalc.invsub[idx])
-		}
-		return sd.precalc.invsub[idx]
-	}
-	var t kyber.Scalar
+	idx := int(sd.D) - 1 + m - j
 	if len(set) > 0 {
-		t = set[0]
-	} else {
-		t = sd.Suite.G1().Scalar()
+		set[0].Set(sd.precalc.invsub[idx])
 	}
-	t.Sub(sd.AprimeDomainI[m], sd.AprimeDomainI[j])
-	t.Inv(t)
-	return t
+	return sd.precalc.invsub[idx]
 }

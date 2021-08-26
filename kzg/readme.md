@@ -1,4 +1,7 @@
 # Package KZG
+
+_Disclaimer: the package is experimental. It can only be used in research and not suitable for use in production_
+
 Package KZG implements functions needed for _Kate-Zaverucha-Goldberg_ polynomial commitments,
 also known as KZG, KZG10 and **Kate commitments**.
 
@@ -16,17 +19,16 @@ It follows guidelines:
 * [KZG polynomial commitments](https://dankradfeist.de/ethereum/2020/06/16/kate-polynomial-commitments.html) by Dankrad Feist
 * [PCS multiproofs using random evaluation](https://dankradfeist.de/ethereum/2021/06/18/pcs-multiproofs.html) Dankrad Feist
 
-This implementation uses a trusted setup completely in the Lagrange basis an all calculetions
+This implementation uses a trusted setup completely in the Lagrange basis an all calculations
 are performed in the evaluation form of the polynomial. The coordinate form and powers of the secret on the curve
 nor any FFT operations are not needed.
 
-`D` kan be arbitrary value. The implementation assumes maximum lengths of vectors `D` = 257.
+`D` can be arbitrary value. The implementation assumes maximum lengths of vectors `D` = 257.
 It corresponds to the 257-ary _verkle trie_.
 
 The math of the implementation is described in this [document](https://hackmd.io/JM7BDAugQyuJgW66K-OX7A).
 
-
-
-Some more readings:
+More readings:
 
 * [Kate Commitments: A Primer](https://hackmd.io/@tompocock/Hk2A7BD6U)
+* [Verkle trees](https://vitalik.ca/general/2021/06/18/verkle.html) by Vitalik Buterin

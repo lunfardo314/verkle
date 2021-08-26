@@ -43,7 +43,7 @@ func (sd *TrustedSetup) qPoly(vect []kyber.Scalar, i, m int, y kyber.Scalar, ret
 			ret.Zero()
 			return
 		}
-		ret.Mul(numer, sd.InvSub(m, i))
+		ret.Mul(numer, sd.invsub(m, i))
 		return
 	}
 	// i == m
@@ -55,11 +55,11 @@ func (sd *TrustedSetup) qPoly(vect []kyber.Scalar, i, m int, y kyber.Scalar, ret
 		if j == m || vect[j] == nil {
 			continue
 		}
-		t.Mul(vect[j], sd.TA(m, j, t1))
+		t.Mul(vect[j], sd.ta(m, j, t1))
 		ret.Add(ret, t)
 	}
 	if vect[m] != nil {
-		t.Mul(vect[m], sd.TK(m, t1))
+		t.Mul(vect[m], sd.tk(m, t1))
 		ret.Sub(ret, t)
 	}
 }

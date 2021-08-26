@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// KVStore abstract interface used in trie implementation
+// KVStore abstract interface only used in this trie implementation
 type KVStore interface {
 	Set(k []byte, v []byte)
 	Del(k []byte)
