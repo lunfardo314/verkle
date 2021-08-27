@@ -285,9 +285,9 @@ func TestTrieStats(t *testing.T) {
 		statsKVValues := GetStatsKVStore(st.values)
 		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
 			statsKVValues.NumKeys, statsKVValues.AvgKeyLen, statsKVValues.AvgValueSize)
-		for i, n := range statsKVValues.KeyLen {
-			t.Logf("      len %d: %d", i, n)
-		}
+		//for i, n := range statsKVValues.KeyLen {
+		//	t.Logf("      len %d: %d", i, n)
+		//}
 		statsKVTrie := GetStatsKVStore(st.trie)
 		t.Logf("TRIE KV:\n    trie keys: %d\n    avg trie key len: %f\n    avg value size: %f\n",
 			statsKVTrie.NumKeys, statsKVTrie.AvgKeyLen, statsKVTrie.AvgValueSize)
@@ -295,8 +295,8 @@ func TestTrieStats(t *testing.T) {
 			t.Logf("      len %d: %d", i, n)
 		}
 		statsTrie := GetStatsTrie(st)
-		t.Logf("TRIE:\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
-			statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
+		t.Logf("TRIE:\n    excess factor: %d%%\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
+			100*statsKVTrie.NumKeys/statsKVValues.NumKeys-100, statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
 		for i, nch := range statsTrie.NumChildren {
 			if nch != 0 {
 				t.Logf("     %d: %d", i, nch)
@@ -321,9 +321,9 @@ func TestTrieStats(t *testing.T) {
 		statsKVValues := GetStatsKVStore(st.values)
 		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
 			statsKVValues.NumKeys, statsKVValues.AvgKeyLen, statsKVValues.AvgValueSize)
-		for i, n := range statsKVValues.KeyLen {
-			t.Logf("      len %d: %d", i, n)
-		}
+		//for i, n := range statsKVValues.KeyLen {
+		//	t.Logf("      len %d: %d", i, n)
+		//}
 		statsKVTrie := GetStatsKVStore(st.trie)
 		t.Logf("TRIE KV:\n    trie keys: %d\n    avg trie key len: %f\n    avg value size: %f\n",
 			statsKVTrie.NumKeys, statsKVTrie.AvgKeyLen, statsKVTrie.AvgValueSize)
@@ -331,8 +331,8 @@ func TestTrieStats(t *testing.T) {
 			t.Logf("      len %d: %d", i, n)
 		}
 		statsTrie := GetStatsTrie(st)
-		t.Logf("TRIE:\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
-			statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
+		t.Logf("TRIE:\n    excess factor: %d%%\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
+			100*statsKVTrie.NumKeys/statsKVValues.NumKeys-100, statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
 		for i, nch := range statsTrie.NumChildren {
 			if nch != 0 {
 				t.Logf("     %d: %d", i, nch)
