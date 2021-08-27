@@ -1,8 +1,6 @@
 package trie
 
 import (
-	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"math/rand"
 	"testing"
 	"time"
@@ -131,29 +129,29 @@ func TestTrie1(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
-		updateKeys(st, kvpairs1)
+		UpdateKeys(st, kvpairs1)
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 	})
 	t.Run("determinism 1", func(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		c1 := updateKeys(st, kvpairs1)
+		c1 := UpdateKeys(st, kvpairs1)
 		t.Logf("C1 = %s", c1.String())
-		c2 := updateKeys(st, kvpairs1)
+		c2 := UpdateKeys(st, kvpairs1)
 		t.Logf("C1 = %s", c2.String())
 		require.True(t, c1.Equal(c2))
 	})
 	t.Run("determinism 2", func(t *testing.T) {
 		st1 := NewState(ts)
 		require.True(t, st1.Check(ts))
-		c1 := updateKeys(st1, kvpairs1)
+		c1 := UpdateKeys(st1, kvpairs1)
 		t.Logf("C1 = %s", c1.String())
 
 		st2 := NewState(ts)
 		require.True(t, st2.Check(ts))
 
-		c2 := updateKeys(st2, kvpairs1)
+		c2 := UpdateKeys(st2, kvpairs1)
 		t.Logf("C1 = %s", c2.String())
 
 		require.True(t, c1.Equal(c2))
@@ -161,14 +159,14 @@ func TestTrie1(t *testing.T) {
 	t.Run("determinism 3", func(t *testing.T) {
 		st1 := NewState(ts)
 		require.True(t, st1.Check(ts))
-		c1 := updateKeys(st1, kvpairs1)
+		c1 := UpdateKeys(st1, kvpairs1)
 		t.Logf("C1 = %s", c1.String())
 
 		st2 := NewState(ts)
 		require.True(t, st2.Check(ts))
 
-		rpairs := randomizeKeys(kvpairs1)
-		c2 := updateKeys(st2, rpairs)
+		rpairs := RandomizeKeys(kvpairs1)
+		c2 := UpdateKeys(st2, rpairs)
 		t.Logf("C1 = %s", c2.String())
 
 		require.True(t, c1.Equal(c2))
@@ -179,8 +177,8 @@ func TestTrie1(t *testing.T) {
 			st := NewState(ts)
 			require.True(t, st.Check(ts))
 
-			rpairs := randomizeKeys(kvpairs1)
-			c := updateKeys(st, rpairs)
+			rpairs := RandomizeKeys(kvpairs1)
+			c := UpdateKeys(st, rpairs)
 			t.Logf("C = %s", c.String())
 
 			if prev != nil {
@@ -199,7 +197,7 @@ func TestTrie2(t *testing.T) {
 	t.Run("1", func(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
-		updateKeys(st, kvpairs1)
+		UpdateKeys(st, kvpairs1)
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 
 		for _, kv := range kvpairs1 {
@@ -237,11 +235,11 @@ func TestTrie3(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeys(num)
+		kpairs := GenKeys(num)
 		for i, kp := range kpairs {
 			t.Logf("%d: %s -- %s", i, kp.key, kp.value)
 		}
-		updateKeys(st, kpairs)
+		UpdateKeys(st, kpairs)
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 	})
 	t.Run("2", func(t *testing.T) {
@@ -250,11 +248,11 @@ func TestTrie3(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeys(num)
+		kpairs := GenKeys(num)
 		for i, kp := range kpairs {
 			t.Logf("%d: %s -- %s", i, kp.key, kp.value)
 		}
-		updateKeys(st, kpairs)
+		UpdateKeys(st, kpairs)
 		for _, kv := range kpairs {
 			proof, ok := st.ProveStr(kv.key)
 			t.Logf("proof len: %d, key: %s, val: %s", len(proof.Path), string(proof.Key), string(proof.Value))
@@ -278,12 +276,12 @@ func TestTrieProveVerify(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeys(numKeys)
+		kpairs := GenKeys(numKeys)
 		t.Logf("num key/value pairs: %d", len(kpairs))
-		c := updateKeys(st, kpairs)
+		c := UpdateKeys(st, kpairs)
 		t.Logf("C = %s", c)
 
-		require.True(t, hasAllKeys(st, kpairs))
+		require.True(t, HasAllKeys(st, kpairs))
 
 		for i := 0; i < numChecks; i++ {
 			idx := rand.Intn(len(kpairs))
@@ -303,12 +301,12 @@ func TestTrieProveVerify(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeysISCP(numKeys, numSC)
+		kpairs := GenKeysISCP(numKeys, numSC)
 		t.Logf("num key/value pairs: %d", len(kpairs))
-		c := updateKeys(st, kpairs)
+		c := UpdateKeys(st, kpairs)
 		t.Logf("C = %s", c)
 
-		require.True(t, hasAllKeys(st, kpairs))
+		require.True(t, HasAllKeys(st, kpairs))
 
 		for i := 0; i < numChecks; i++ {
 			idx := rand.Intn(len(kpairs))
@@ -334,12 +332,12 @@ func TestTrieStats(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeys(numKeys)
+		kpairs := GenKeys(numKeys)
 		t.Logf("num key/value pairs: %d", len(kpairs))
-		c := updateKeys(st, kpairs)
+		c := UpdateKeys(st, kpairs)
 		t.Logf("C = %s", c)
 
-		require.True(t, hasAllKeys(st, kpairs))
+		require.True(t, HasAllKeys(st, kpairs))
 
 		statsKVValues := GetStatsKVStore(st.values)
 		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
@@ -370,12 +368,12 @@ func TestTrieStats(t *testing.T) {
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
-		kpairs := genKeysISCP(numKeys, numSC)
+		kpairs := GenKeysISCP(numKeys, numSC)
 		t.Logf("num key/value pairs: %d", len(kpairs))
-		c := updateKeys(st, kpairs)
+		c := UpdateKeys(st, kpairs)
 		t.Logf("C = %s", c)
 
-		require.True(t, hasAllKeys(st, kpairs))
+		require.True(t, HasAllKeys(st, kpairs))
 
 		statsKVValues := GetStatsKVStore(st.values)
 		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
@@ -399,107 +397,4 @@ func TestTrieStats(t *testing.T) {
 		}
 		//t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 	})
-}
-
-type kvpair struct {
-	key   string
-	value string
-}
-
-var kvpairs1 = []*kvpair{
-	{"a", "1"},
-	{"ab", "2"},
-	{"ac", "3"},
-	{"abrakadabra", "4"},
-	{"abrak2adab", "5"},
-	{"abrak1adabra", "6"},
-	{"abrak3adabra", "7"},
-	{"abrak2", "8"},
-	{"abrak3", "9"},
-	{"abrak3a", "10"},
-	{"abrak3ab", "11"},
-	{"abrak3abc", "12"},
-	{"abrak3a", "10"},
-	{"abrak3ab", "11"},
-	{"abrak3abc", "12"},
-}
-
-func updateKeys(st *State, pairs []*kvpair) kyber.Point {
-	for _, kv := range pairs {
-		st.UpdateStr(kv.key, kv.value)
-	}
-	st.FlushCaches()
-	return st.RootCommitment()
-}
-
-func randomizeKeys(pairs []*kvpair) []*kvpair {
-	ret := make([]*kvpair, len(pairs))
-	for i := range pairs {
-		r := rand.Intn(len(ret))
-		for j := r; ; j = (j + 1) % len(pairs) {
-			if ret[j] == nil {
-				ret[j] = pairs[i]
-				break
-			}
-		}
-	}
-	return ret
-}
-
-func genKeys(n int) []*kvpair {
-	kmap := make(map[string]string)
-	for i := 0; len(kmap) != n; i++ {
-		r := rand.Intn(70)
-		buf := make([]byte, r+1)
-		rand.Read(buf)
-		kmap[string(buf)] = fmt.Sprintf("%d", i)
-		i++
-	}
-	ret := make([]*kvpair, n)
-	i := 0
-	for k, v := range kmap {
-		ret[i] = &kvpair{
-			key:   k,
-			value: v,
-		}
-		i++
-	}
-	return ret
-}
-
-func hasAllKeys(st *State, kvpairs []*kvpair) bool {
-	for _, kvp := range kvpairs {
-		if !st.values.Has([]byte(kvp.key)) {
-			return false
-		}
-	}
-	return true
-}
-
-func genKeysISCP(total, numSC int) []*kvpair {
-	scs := make([][4]byte, numSC)
-	for i := range scs {
-		r := fmt.Sprintf("%d", rand.Intn(10000)%5843)
-		scKey := blake2b.Sum256([]byte(r))
-		copy(scs[i][:], scKey[0:4])
-	}
-	kmap := make(map[string]string)
-	for i := 0; len(kmap) != total; i++ {
-		r := rand.Intn(60)
-		buf := make([]byte, r+5)
-		rand.Read(buf)
-		copy(buf[0:4], scs[rand.Intn(numSC)][:]) // emulate SC prefix
-		buf[4] = byte(rand.Intn(256) % 10)       // emulate limited number of state variables
-		kmap[string(buf)] = fmt.Sprintf("%d", i)
-	}
-	ret := make([]*kvpair, total)
-	i := 0
-	for k, v := range kmap {
-		ret[i] = &kvpair{
-			key:   k,
-			value: v,
-		}
-		i++
-	}
-	return ret
 }
