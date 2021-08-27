@@ -265,10 +265,69 @@ func TestTrie3(t *testing.T) {
 	})
 }
 
+func TestTrieProveVerify(t *testing.T) {
+	suite := bn256.NewSuite()
+	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
+	require.NoError(t, err)
+	rand.Seed(time.Now().UnixNano())
+
+	t.Run("random", func(t *testing.T) {
+		const numKeys = 100000
+		const numChecks = 100
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := genKeys(numKeys)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := updateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, hasAllKeys(st, kpairs))
+
+		for i := 0; i < numChecks; i++ {
+			idx := rand.Intn(len(kpairs))
+			proof, ok := st.ProveStr(kpairs[idx].key)
+			t.Logf("proof len: %d, key len: %d", len(proof.Path), len(proof.Key))
+			require.True(t, ok)
+			err := VerifyProofPath(st.ts, proof)
+			require.NoError(t, err)
+
+		}
+	})
+	t.Run("random iscp style", func(t *testing.T) {
+		const numKeys = 100000
+		const numSC = 100
+		const numChecks = 100
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := genKeysISCP(numKeys, numSC)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := updateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, hasAllKeys(st, kpairs))
+
+		for i := 0; i < numChecks; i++ {
+			idx := rand.Intn(len(kpairs))
+			proof, ok := st.ProveStr(kpairs[idx].key)
+			t.Logf("proof len: %d, key len: %d", len(proof.Path), len(proof.Key))
+			require.True(t, ok)
+			err := VerifyProofPath(st.ts, proof)
+			require.NoError(t, err)
+
+		}
+	})
+}
+
 func TestTrieStats(t *testing.T) {
 	suite := bn256.NewSuite()
 	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
 	require.NoError(t, err)
+	rand.Seed(time.Now().UnixNano())
+
 	t.Run("random", func(t *testing.T) {
 		const numKeys = 10000
 
@@ -389,7 +448,6 @@ func randomizeKeys(pairs []*kvpair) []*kvpair {
 
 func genKeys(n int) []*kvpair {
 	kmap := make(map[string]string)
-	rand.Seed(time.Now().UnixNano())
 	for i := 0; len(kmap) != n; i++ {
 		r := rand.Intn(70)
 		buf := make([]byte, r+1)
@@ -419,7 +477,6 @@ func hasAllKeys(st *State, kvpairs []*kvpair) bool {
 }
 
 func genKeysISCP(total, numSC int) []*kvpair {
-	rand.Seed(time.Now().UnixNano())
 	scs := make([][4]byte, numSC)
 	for i := range scs {
 		r := fmt.Sprintf("%d", rand.Intn(10000)%5843)
