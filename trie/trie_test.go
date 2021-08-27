@@ -2,6 +2,7 @@ package trie
 
 import (
 	"fmt"
+	"golang.org/x/crypto/blake2b"
 	"math/rand"
 	"testing"
 	"time"
@@ -268,13 +269,49 @@ func TestTrieStats(t *testing.T) {
 	suite := bn256.NewSuite()
 	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
 	require.NoError(t, err)
-	t.Run("1", func(t *testing.T) {
-		const numKeys = 1000
+	t.Run("random", func(t *testing.T) {
+		const numKeys = 10000
 
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
 
 		kpairs := genKeys(numKeys)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := updateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, hasAllKeys(st, kpairs))
+
+		statsKVValues := GetStatsKVStore(st.values)
+		t.Logf("VALUE KV:\n    value keys: %d\n    avg value key len: %f\n    avg value size: %f",
+			statsKVValues.NumKeys, statsKVValues.AvgKeyLen, statsKVValues.AvgValueSize)
+		for i, n := range statsKVValues.KeyLen {
+			t.Logf("      len %d: %d", i, n)
+		}
+		statsKVTrie := GetStatsKVStore(st.trie)
+		t.Logf("TRIE KV:\n    trie keys: %d\n    avg trie key len: %f\n    avg value size: %f\n",
+			statsKVTrie.NumKeys, statsKVTrie.AvgKeyLen, statsKVTrie.AvgValueSize)
+		for i, n := range statsKVTrie.KeyLen {
+			t.Logf("      len %d: %d", i, n)
+		}
+		statsTrie := GetStatsTrie(st)
+		t.Logf("TRIE:\n    numNodes: %d\n    avg num children: %f\n    only terminal: %d\n    number of children (incl terminal):",
+			statsTrie.NumNodes, statsTrie.AvgNumChildren, statsTrie.OnlyTerminal)
+		for i, nch := range statsTrie.NumChildren {
+			if nch != 0 {
+				t.Logf("     %d: %d", i, nch)
+			}
+		}
+		//t.Logf("\nTRIE: \n%s\n", st.StringTrie())
+	})
+	t.Run("random iscp style", func(t *testing.T) {
+		const numKeys = 10000
+		const numSC = 100
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := genKeysISCP(numKeys, numSC)
 		t.Logf("num key/value pairs: %d", len(kpairs))
 		c := updateKeys(st, kpairs)
 		t.Logf("C = %s", c)
@@ -351,16 +388,23 @@ func randomizeKeys(pairs []*kvpair) []*kvpair {
 }
 
 func genKeys(n int) []*kvpair {
-	ret := make([]*kvpair, n)
+	kmap := make(map[string]string)
 	rand.Seed(time.Now().UnixNano())
-	for i := range ret {
+	for i := 0; len(kmap) != n; i++ {
 		r := rand.Intn(70)
 		buf := make([]byte, r+1)
 		rand.Read(buf)
+		kmap[string(buf)] = fmt.Sprintf("%d", i)
+		i++
+	}
+	ret := make([]*kvpair, n)
+	i := 0
+	for k, v := range kmap {
 		ret[i] = &kvpair{
-			key:   string(buf), // hex.EncodeToString(buf),
-			value: fmt.Sprintf("%d", i),
+			key:   k,
+			value: v,
 		}
+		i++
 	}
 	return ret
 }
@@ -372,4 +416,33 @@ func hasAllKeys(st *State, kvpairs []*kvpair) bool {
 		}
 	}
 	return true
+}
+
+func genKeysISCP(total, numSC int) []*kvpair {
+	rand.Seed(time.Now().UnixNano())
+	scs := make([][4]byte, numSC)
+	for i := range scs {
+		r := fmt.Sprintf("%d", rand.Intn(10000)%5843)
+		scKey := blake2b.Sum256([]byte(r))
+		copy(scs[i][:], scKey[0:4])
+	}
+	kmap := make(map[string]string)
+	for i := 0; len(kmap) != total; i++ {
+		r := rand.Intn(60)
+		buf := make([]byte, r+5)
+		rand.Read(buf)
+		copy(buf[0:4], scs[rand.Intn(numSC)][:]) // emulate SC prefix
+		buf[4] = byte(rand.Intn(256) % 10)       // emulate limited number of state variables
+		kmap[string(buf)] = fmt.Sprintf("%d", i)
+	}
+	ret := make([]*kvpair, total)
+	i := 0
+	for k, v := range kmap {
+		ret[i] = &kvpair{
+			key:   k,
+			value: v,
+		}
+		i++
+	}
+	return ret
 }
