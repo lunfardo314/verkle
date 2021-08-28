@@ -113,7 +113,7 @@ Let's say we have the following key/value pairs in the state:
 
 The resulting verkle trie will be the following:
 
-![](verkle.png | width=300)
+<img src="verkle.png">
 
 
 
