@@ -187,6 +187,19 @@ func TestTrie1(t *testing.T) {
 			prev = c
 		}
 	})
+	t.Run("example", func(t *testing.T) {
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		st.UpdateStr("abra", "something")
+		st.UpdateStr("abrakadabra", "anything")
+		st.UpdateStr("abra+", "314")
+		st.UpdateStr("abra@", "217")
+		st.UpdateStr("abrak+", "42")
+		st.FlushCaches()
+
+		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
+	})
 }
 
 func TestTrie2(t *testing.T) {

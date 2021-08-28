@@ -99,7 +99,21 @@ root node and then recursively follow the path by concatenating corresponding `p
 and picking corresponding byte of the next child in each node. The process finished when we
 reach our key and the node with that key with terminal value which is (must be) a commitment to `V.
 
+## Example
 
+Let's say we have the following key/value pairs in the state:
+```
+        "": <trusted setup>
+		"abra": "something"
+		"abrakadabra": "anything"
+		"abra+": "314"
+		"abra@": "217"
+		"abra-+" "42"
+```
+
+The resulting verkle trie will be the following:
+
+![](verkle.png | width=300)
 
 
 
