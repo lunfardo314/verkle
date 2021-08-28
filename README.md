@@ -1,9 +1,7 @@
 # 257-ary _verkle_ trie
 
-_Disclaimer: the code in this package is experimental. It can only be used in research and *is not suitable for use in production*.
-
-The _trusted setup_ must be created in a secure environment. This is a responsibility of the user.
-The security of your trusted setup entirely depends on how you use the _kzg_setup_ program, i.e. how you treat the secret it is based upon._
+_Disclaimer: the code in this package is experimental. It can only be used in research and is not suitable for use in production._
+The trusted setup must be created in a secure environment. This is a responsibility of the user._
 
 ## General
 The repository contains an **experimental** implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
