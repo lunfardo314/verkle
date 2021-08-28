@@ -57,8 +57,8 @@ added to the storage and trie, the state (and the commitment to it) is the same.
 
 The key/value store is and impementation of `trie.KVStore` interface.
 
-The state is implemented as `trie.State`. It contains partitions for values, for the trie itself, also cache
-for keeping nodes being during bulky state update operations.
+The state is implemented as `trie.State`. It contains partitions for key/values pairs of the state, for the trie itself.
+It also contains cache for keeping nodes being updated during bulky state update operations.
 
 ### The trie
 
@@ -66,10 +66,40 @@ The trie is represented as a collection of key/value pairs in the `trie` partiti
 represents a _node_ of the trie in serialized form.
 
 ``` Go
-// Node is a node of the 257-ary verkle trie
 type Node struct {
 	pathFragment  []byte
 	children      [256]kyber.Point
 	terminalValue kyber.Scalar
 }
 ```
+
+Each node can keep commitments to its children and to terminal value.
+
+The _ith_ child has a commitment to it in `children[i]` or `nil` if there's not commitment to it.
+Commitment is represented by `kyber.Point` interface which here is a point on the curve `G1`.
+
+The commitment to the terminal value, if exists, is not `nil` and is equal to the `blake2b` hash of the data itself, adjusted
+to the underlying field of the curves. It represented by `kyber.Scalar` interface.
+
+Each _node_ represents a _vector_ `V = (v0, v1, ...., v256)`. Value of `vi` is 0 if value of the underlying
+commitment is nil. Otherwise `v256` corresponds to the terminal value and other `vi` are `blke2b` hashes of
+commitments adjusted to the field.
+
+Commitment to the node `C` is the commitment to the vector `V`.
+
+The `pathFragment` is a slice (can be empty) of bytes taken from the key of the key/value pair in the state.
+
+Lest say the node `N` is stored in the trie under some key `K`. Concatenation `P = K || N.pathFragment` means the following:
+* if `N` contains commitment to the terminal value `V`, the `P` is the key of that value in the state: `P: V`.
+* for any not `nil` child with index `0 <= i < 256`, the `Pi = P || {i} = K || N.pathFragment || {i}` is the key of the node
+  which contains the _vector_ of commitments of the child. Here `{i}` is a slice of one byte.
+
+So, whenever we need a proof for the key/value pair `K: V` `in the state, we start from the empty key which corresponds to the
+root node and then recursively follow the path by concatenating corresponding `pathFragment` values
+and picking corresponding byte of the next child in each node. The process finished when we
+reach our key and the node with that key with terminal value which is (must be) a commitment to `V.
+
+
+
+
+
