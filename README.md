@@ -4,7 +4,7 @@ _Disclaimer: the code in this package is experimental. It can only be used in re
 The trusted setup must be created in a secure environment. This is a responsibility of the user._
 
 ## General
-The repository contains an **experimental** implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
+The repository contains an implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
 
 The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hashing
 as a commitment method used in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
@@ -15,8 +15,8 @@ The implementation uses _trusted setup_ completely in Lagrange basis.
 Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to articles it is based upon.
 
 The implementation uses a bit unconventional approach to the data structure of the trie, the _257-ary trie_.
-The rationale for this is always use original keys of arbitrary length without hashing them as in Patricia tries.
-Any key can point to the terminal value and be a prefix in other keys.
+The rationale for this: we aim to use original keys of arbitrary length without hashing them as in Patricia tries.
+Any key can point to the terminal value and same time can be a prefix in other keys.
 So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value, hence `257`.
 
 We see benefits in the approach, due to its properties:
@@ -93,21 +93,21 @@ Lest say the node `N` is stored in the trie under some key `K`. Concatenation `P
 * for any not `nil` child with index `0 <= i < 256`, the `Pi = P || {i} = K || N.pathFragment || {i}` is the key of the node
   which contains the _vector_ of commitments of the child. Here `{i}` is a slice of one byte.
 
-So, whenever we need a proof for the key/value pair `K: V` `in the state, we start from the empty key which corresponds to the
+So, whenever we need a proof for the key/value pair `K: V` in the state, we start from the empty key which corresponds to the
 root node and then recursively follow the path by concatenating corresponding `pathFragment` values
 and picking corresponding byte of the next child in each node. The process finished when we
-reach our key and the node with that key with terminal value which is (must be) a commitment to `V.
+reach our key and the node which contains commitment of the terminal value `V`.
 
 ## Example
 
 Let's say we have the following key/value pairs in the state:
 ```
-        "": <trusted setup>
-		"abra": "something"
-		"abrakadabra": "anything"
-		"abra+": "314"
-		"abra@": "217"
-		"abra-+" "42"
+   "": <trusted setup>
+   "abra": "something"
+   "abrakadabra": "anything"
+   "abra+": "314"
+   "abra@": "217"
+   "abra-+" "42"
 ```
 
 The resulting 257-ary verkle trie will look like this:
