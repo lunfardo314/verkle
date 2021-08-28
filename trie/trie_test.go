@@ -333,6 +333,61 @@ func TestTrieProveVerify(t *testing.T) {
 	})
 }
 
+func TestTrieDistributionProofLength(t *testing.T) {
+	suite := bn256.NewSuite()
+	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
+	require.NoError(t, err)
+	rand.Seed(time.Now().UnixNano())
+
+	t.Run("random", func(t *testing.T) {
+		const numKeys = 100000
+		const numChecks = 100
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := GenKeys(numKeys)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := UpdateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, HasAllKeys(st, kpairs))
+
+		distr := make(map[int]int)
+		for i := 0; i < numChecks; i++ {
+			idx := rand.Intn(len(kpairs))
+			proof, _ := st.ProveStr(kpairs[idx].key)
+			t := distr[len(proof.Path)]
+			distr[len(proof.Path)] = t + 1
+		}
+		PrintSizeDistrib(t, distr)
+	})
+	t.Run("random iscp style", func(t *testing.T) {
+		const numKeys = 100000
+		const numSC = 100
+		const numChecks = 100
+
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		kpairs := GenKeysISCP(numKeys, numSC)
+		t.Logf("num key/value pairs: %d", len(kpairs))
+		c := UpdateKeys(st, kpairs)
+		t.Logf("C = %s", c)
+
+		require.True(t, HasAllKeys(st, kpairs))
+
+		distr := make(map[int]int)
+		for i := 0; i < numChecks; i++ {
+			idx := rand.Intn(len(kpairs))
+			proof, _ := st.ProveStr(kpairs[idx].key)
+			t := distr[len(proof.Path)]
+			distr[len(proof.Path)] = t + 1
+		}
+		PrintSizeDistrib(t, distr)
+	})
+}
+
 func TestTrieStats(t *testing.T) {
 	suite := bn256.NewSuite()
 	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
@@ -340,7 +395,7 @@ func TestTrieStats(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
 	t.Run("random", func(t *testing.T) {
-		const numKeys = 10000
+		const numKeys = 100000
 
 		st := NewState(ts)
 		require.True(t, st.Check(ts))
@@ -375,8 +430,8 @@ func TestTrieStats(t *testing.T) {
 		//t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 	})
 	t.Run("random iscp style", func(t *testing.T) {
-		const numKeys = 10000
-		const numSC = 100
+		const numKeys = 100000
+		const numSC = 300
 
 		st := NewState(ts)
 		require.True(t, st.Check(ts))

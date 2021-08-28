@@ -5,6 +5,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"golang.org/x/crypto/blake2b"
 	"math/rand"
+	"testing"
 )
 
 type kvpair struct {
@@ -108,4 +109,23 @@ func GenKeysISCP(total, numSC int) []*kvpair {
 		i++
 	}
 	return ret
+}
+
+func PrintSizeDistrib(t *testing.T, distrib map[int]int) {
+	maxIdx := 1
+	for i := range distrib {
+		if i < 0 {
+			panic("i < 1")
+		}
+		if i > maxIdx {
+			maxIdx = i
+		}
+	}
+	arr := make([]int, maxIdx+1)
+	for i, v := range distrib {
+		arr[i] = v
+	}
+	for i, v := range arr {
+		t.Logf(" size %d: %d", i, v)
+	}
 }

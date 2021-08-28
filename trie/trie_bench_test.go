@@ -28,7 +28,7 @@ func BenchmarkProveVerify(b *testing.B) {
 	suite := bn256.NewSuite()
 	ts, _ := kzg.TrustedSetupFromFile(suite, "example.setup")
 	rand.Seed(time.Now().UnixNano())
-	const numKeys = 10000
+	const numKeys = 100000
 
 	st := NewState(ts)
 
@@ -53,7 +53,7 @@ func BenchmarkProof(b *testing.B) {
 	suite := bn256.NewSuite()
 	ts, _ := kzg.TrustedSetupFromFile(suite, "example.setup")
 	rand.Seed(time.Now().UnixNano())
-	const numKeys = 1000
+	const numKeys = 100000
 
 	st := NewState(ts)
 
@@ -61,21 +61,23 @@ func BenchmarkProof(b *testing.B) {
 	b.Logf("num key/value pairs: %d", len(kpairs))
 	c := UpdateKeys(st, kpairs)
 	b.Logf("C = %s", c)
-	b.Logf("b.N = %d", b.N)
 
-	b.ResetTimer()
-	proofs := make([]*Proof, b.N)
-	for i := 0; i < b.N; i++ {
-		idx := rand.Intn(len(kpairs))
-		proofs[i], _ = st.ProveStr(kpairs[idx].key)
-	}
+	b.Run("1", func(b *testing.B) {
+		b.Logf("b.N = %d", b.N)
+		b.ResetTimer()
+		proofs := make([]*Proof, b.N)
+		for i := 0; i < b.N; i++ {
+			idx := rand.Intn(len(kpairs))
+			proofs[i], _ = st.ProveStr(kpairs[idx].key)
+		}
+	})
 }
 
 func BenchmarkVerify(b *testing.B) {
 	suite := bn256.NewSuite()
 	ts, _ := kzg.TrustedSetupFromFile(suite, "example.setup")
 	rand.Seed(time.Now().UnixNano())
-	const numKeys = 1000
+	const numKeys = 100000
 
 	st := NewState(ts)
 
@@ -83,19 +85,23 @@ func BenchmarkVerify(b *testing.B) {
 	b.Logf("num key/value pairs: %d", len(kpairs))
 	c := UpdateKeys(st, kpairs)
 	b.Logf("C = %s", c)
-	b.Logf("b.N = %d", b.N)
 
-	proofs := make([]*Proof, b.N)
-	for i := 0; i < b.N; i++ {
-		idx := rand.Intn(len(kpairs))
-		proofs[i], _ = st.ProveStr(kpairs[idx].key)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		err := VerifyProofPath(st.ts, proofs[i])
-		if err != nil {
-			panic(err)
+	b.Run("1", func(b *testing.B) {
+		b.Logf("generating b.N = %d proofs", b.N)
+		proofs := make([]*Proof, b.N)
+		for i := 0; i < b.N; i++ {
+			idx := rand.Intn(len(kpairs))
+			proofs[i], _ = st.ProveStr(kpairs[idx].key)
 		}
-	}
+
+		b.Logf("b.N = %d", b.N)
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			err := VerifyProofPath(st.ts, proofs[i])
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
 }

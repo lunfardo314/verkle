@@ -111,9 +111,40 @@ Let's say we have the following key/value pairs in the state:
 		"abra-+" "42"
 ```
 
-The resulting verkle trie will look like this:
+The resulting 257-ary verkle trie will look like this:
 
 <img src="verkle.png">
 
+## Benchmarks
 
+On _Intel(R) Core(TM) i7-7600U CPU @ 2.80GHz_ laptop.
 
+* building a trie: _0.67 ms_ per included key
+* generating proof from the state in memory with 100000 keys: _168 ms per proof of 1 key/value_. It is an expensive
+  operation because always require `K x 257` operations on the curve, where `K` is number of nodes in the proof.
+* verifying proof (state with 100000 keys): _12.6 ms per verification_
+
+Trie size estimates:
+
+With 100000 key/value pairs in the state generated uniformly randomly with max key size `70`:
+
+* keys/nodes in the trie: `128648` (excess factor 28%)
+* average length of the ley in the trie: 2.6 bytes
+* average number of children: 1.78
+* number of nodes with only terminal values (no children): 98685 (76.7%)
+* 96% of nodes has 3 or less children
+* distribution of proof length: 22% length 3, 78% length 4
+
+With 100000 key/value pairs in the state generated with max key size `60` assuming
+realistic state patterns of the state of the IOTA Smart Contract chain: first 4-6 bytes are much more predictable.
+
+* keys/nodes in the trie: `107940` (excess factor 7%)
+* average length of the ley in the trie: 6.07 bytes
+* average number of children: 1.93
+* number of nodes with only terminal values (no children): 98497 (91.2%)
+* 96% of nodes has 1 or 2 children
+* distribution of length of the proof: 38% length 4, 49% length 5, 13% length 6
+
+Also, the following chart shoes size of keys in the trie partition:
+
+<img src="trie_key_size.png"  width="300">
