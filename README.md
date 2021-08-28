@@ -111,7 +111,7 @@ Let's say we have the following key/value pairs in the state:
 		"abra-+" "42"
 ```
 
-The resulting verkle trie will be the following:
+The resulting verkle trie will look like this:
 
 <img src="verkle.png">
 
