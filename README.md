@@ -128,23 +128,23 @@ Trie size estimates:
 
 With 100000 key/value pairs in the state generated uniformly randomly with max key size `70`:
 
-* keys/nodes in the trie: `128648` (excess factor 28%)
-* average length of the ley in the trie: 2.6 bytes
-* average number of children: 1.78
-* number of nodes with only terminal values (no children): 98685 (76.7%)
-* 96% of nodes has 3 or less children
-* distribution of proof length: 22% length 3, 78% length 4
+* keys/nodes in the trie: _128648_ (excess factor _28%_)
+* average length of the ley in the trie: _2.6 bytes_
+* average number of children: _1.78_
+* number of nodes with only terminal values (no children): _98685_ (_76.7%_)
+* 96% of nodes has 3 or fewer children
+* distribution of length of proofs: _22%_ have length 3, _78%_ have length 4
 
-With 100000 key/value pairs in the state generated with max key size `60` assuming
+With 100000 key/value pairs in the state generated with max key size _60_ assuming
 realistic state patterns of the state of the IOTA Smart Contract chain: first 4-6 bytes are much more predictable.
 
-* keys/nodes in the trie: `107940` (excess factor 7%)
-* average length of the ley in the trie: 6.07 bytes
-* average number of children: 1.93
-* number of nodes with only terminal values (no children): 98497 (91.2%)
+* keys/nodes in the trie: _107940_ (excess factor _7%_)
+* average length of the ley in the trie: _6.07 bytes_
+* average number of children: _1.93_
+* number of nodes with only terminal values (no children): _98497_ (_91.2%_)
 * 96% of nodes has 1 or 2 children
-* distribution of length of the proof: 38% length 4, 49% length 5, 13% length 6
+* distribution of length of the proof: _38%_ have length _4_, _49%_ have length _5_, _13%_ have length _6_
 
-Also, the following chart shoes size of keys in the trie partition:
+Also, the following chart shows size of keys in the trie partition in bytes:
 
 <img src="trie_key_size.png"  width="300">
