@@ -1,6 +1,7 @@
 # 257-ary _verkle_ trie
 
-_Disclaimer: the code in this package is experimental. It can only be used in research and not suitable for use in production.  
+_Disclaimer: the code in this package is experimental. It can only be used in research and *is not suitable for use in production*.
+
 The _trusted setup_ must be created in a secure environment. This is a responsibility of the user.
 The security of your trusted setup entirely depends on how you use the _kzg_setup_ program, i.e. how you treat the secret it is based upon._
 
@@ -121,7 +122,7 @@ On _Intel(R) Core(TM) i7-7600U CPU @ 2.80GHz_ laptop.
 
 * building a trie: _0.67 ms_ per included key
 * generating proof from the state in memory with 100000 keys: _168 ms per proof of 1 key/value_. It is an expensive
-  operation because always require `K x 257` operations on the curve, where `K` is number of nodes in the proof.
+  operation because always requires `K x 257` operations on the curve, where `K` is number of nodes in the proof.
 * verifying proof (state with 100000 keys): _12.6 ms per verification_
 
 Trie size estimates:
@@ -148,3 +149,6 @@ realistic state patterns of the state of the IOTA Smart Contract chain: first 4-
 Also, the following chart shows size of keys in the trie partition in bytes:
 
 <img src="trie_key_size.png"  width="300">
+
+##  Links
+TODO
