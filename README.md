@@ -1,6 +1,6 @@
 # 257-ary _verkle_ trie
 
-_Disclaimer: the code in this package is experimental. It can only be used in research and is not suitable for use in production._
+_Disclaimer: the code in this package is experimental. It can only be used in research and is not suitable for use in production.
 The trusted setup must be created in a secure environment. This is a responsibility of the user._
 
 ## General
