@@ -7,20 +7,20 @@ The trusted setup must be created in a secure environment. This is a responsibil
 The repository contains an implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
 
 The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hash function
-as a commitment method as in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
+as a commitment method used in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
 The approach offers significant advantages with regard to performance, specifically data size of data structures.
 
 The implementation uses _trusted setup_ completely in Lagrange basis.
 Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to the articles it is based upon.
 
-The implementation mostly follows structure of the [Merkle Patricia Tree](https://eth.wiki/fundamentals/patricia-tree).
-Instead of being _hexary_, it uses 257 characters in the trie alphabet:
-256 possible values of the byte plus one for the optional commitment to the terminal value in each node.
-So we need to commit to 257-long vector in each node, i.e. constant `d = 257` in the trusted setup, hence the _257-ary trie_.
+The implementation mostly follows the structure of the [Merkle Patricia Tree](https://eth.wiki/fundamentals/patricia-tree).
+Instead of being _hexary_, it commits to 257-long vector in each node:
+256 possible values of the byte plus one for an optional commitment to the terminal value in each node.
+So constant `d = 257` in the trusted setup, hence the _257-ary trie_.
 
-Original keys of arbitrary length without hashing them to 32 bytes are used.
-This results in shorter keys, more predictable and slower changing structure of the trie.
-Any key can point to the terminal value and same time can be a prefix in other keys.
+Original keys of arbitrary length without hashing them to 32 bytes are used to build the trie.
+This results in shorter keys, more predictable and slow-changing structure of the trie.
+Any key can point to a terminal value and same time it can be a prefix in other keys.
 As it is seen from the implementation, the special 257th "character" does not introduce any significant overhead.
 
 ## Repository and dependencies
