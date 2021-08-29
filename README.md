@@ -4,7 +4,7 @@ _Disclaimer: the code in this package is experimental. It can only be used in re
 The trusted setup must be created in a secure environment. This is a responsibility of the user._
 
 ## General
-The repository contains an implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
+The repository contains an implementation of the so-called [_verkle tree_](https://vitalik.ca/general/2021/06/18/verkle.html) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
 
 The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hash function
 as a commitment method used in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
