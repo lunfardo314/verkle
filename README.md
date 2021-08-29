@@ -18,10 +18,13 @@ The implementation mostly follows structure of the [Merkle Patricia Tree](https:
 Instead of being _hexary_, it uses 257 characters in the trie alphabet:
 256 possible values of the byte plus one for the commitment to the terminal value, hence the _257-ary trie_.
 
+
 The rationale for this: we aim to use original keys of arbitrary length without hashing them and making all 32 byte long.
 This result in shorter keys, more predictable and slowly changing structure of the trie.
 Any key can point to the terminal value and same time can be a prefix in other keys.
 So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value.
+
+From the perspective of `KZG commitments`, we are using constant `d=257` in the trusted setup.
 
 As it is seen from the implementation, the special 257th "character" does not introduce significant overhead,
 while it has some advantages, such as much simple encoding of the trie node.
@@ -158,7 +161,7 @@ The keys are very short due to the big width of the tree.
 * [Kate Commitments: A Primer](https://hackmd.io/@tompocock/Hk2A7BD6U)
 * [DEDIS Advanced Crypto Library for Go Kyber v3](https://github.com/dedis/kyber)
 * [Modified Merkle Patricia Trie Specification](https://eth.wiki/fundamentals/patricia-tree)
-* [Experimental KZG implementation in Go](https://hackmd.io/@Evaldas/SJ9KHoDJF). Math of this implementation explained in detail
+* [Experimental KZG implementation](https://hackmd.io/@Evaldas/SJ9KHoDJF). Math of this implementation explained in detail
 
 ## Acknowledgements
 Special thanks to _Dankrad Feist_ for pointing out my crypto-mathematical mistakes.
