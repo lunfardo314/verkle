@@ -4,11 +4,11 @@ _Disclaimer: the code in this package is experimental. It can only be used in re
 The trusted setup must be created in a secure environment. This is a responsibility of the user._
 
 ## General
-The repository contains an implementation of the so-called [_verkle tree_](https://vitalik.ca/general/2021/06/18/verkle.html) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
-
-The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hash function
-as a commitment method used in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
-The approach offers significant advantages with regard to performance, specifically data size of data structures.
+The repository contains an implementation of the so-called _verkle tree_ as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
+Here's an article explaining [what are verkle trees](https://vitalik.ca/general/2021/06/18/verkle.html). In short, these
+are significantly more efficient replacement for [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
+_Verkle trees_ uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of usual hash function.
+The approach offers significant advantages.
 
 The implementation uses _trusted setup_ completely in Lagrange basis.
 Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to the articles it is based upon.
