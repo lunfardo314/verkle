@@ -31,7 +31,7 @@ func TestState0(t *testing.T) {
 	require.EqualValues(t, ts.Bytes(), proof.Value)
 	require.EqualValues(t, 1, len(proof.Path))
 
-	err = VerifyProofPath(st.ts, proof)
+	err = VerifyProof(st.ts, proof)
 	require.NoError(t, err)
 	t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 }
@@ -68,7 +68,7 @@ func TestTrie1(t *testing.T) {
 		require.EqualValues(t, "a", string(proofa.Key))
 		require.EqualValues(t, "b", string(proofa.Value))
 
-		err = VerifyProofPath(ts, proofa)
+		err = VerifyProof(ts, proofa)
 		require.NoError(t, err)
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
 	})
@@ -93,7 +93,7 @@ func TestTrie1(t *testing.T) {
 		require.EqualValues(t, "a", string(proofa.Key))
 		require.EqualValues(t, "b", string(proofa.Value))
 
-		err = VerifyProofPath(ts, proofa)
+		err = VerifyProof(ts, proofa)
 		require.NoError(t, err)
 
 		proofab, ok := st.ProveStr("ab")
@@ -107,7 +107,7 @@ func TestTrie1(t *testing.T) {
 		require.EqualValues(t, "ab", string(proofab.Key))
 		require.EqualValues(t, "bc", string(proofab.Value))
 
-		err = VerifyProofPath(ts, proofab)
+		err = VerifyProof(ts, proofab)
 		require.NoError(t, err)
 
 		proofzz, ok := st.ProveStr("abrakadabra")
@@ -121,7 +121,7 @@ func TestTrie1(t *testing.T) {
 		require.EqualValues(t, "abrakadabra", string(proofzz.Key))
 		require.EqualValues(t, "zzzz", string(proofzz.Value))
 
-		err = VerifyProofPath(ts, proofzz)
+		err = VerifyProof(ts, proofzz)
 		require.NoError(t, err)
 
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
@@ -216,7 +216,7 @@ func TestTrie2(t *testing.T) {
 		for _, kv := range kvpairs1 {
 			proof, ok := st.ProveStr(kv.key)
 			require.True(t, ok)
-			err := VerifyProofPath(st.ts, proof)
+			err := VerifyProof(st.ts, proof)
 			require.NoError(t, err)
 		}
 	})
@@ -230,7 +230,7 @@ func TestTrie2(t *testing.T) {
 
 			proof, ok := st.ProveStr(kv.key)
 			require.True(t, ok)
-			err := VerifyProofPath(st.ts, proof)
+			err := VerifyProof(st.ts, proof)
 			require.NoError(t, err)
 		}
 		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
@@ -270,7 +270,7 @@ func TestTrie3(t *testing.T) {
 			proof, ok := st.ProveStr(kv.key)
 			t.Logf("proof len: %d, key: %s, val: %s", len(proof.Path), string(proof.Key), string(proof.Value))
 			require.True(t, ok)
-			err := VerifyProofPath(st.ts, proof)
+			err := VerifyProof(st.ts, proof)
 			require.NoError(t, err)
 		}
 	})
@@ -283,7 +283,7 @@ func TestTrieProveVerify(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 
 	t.Run("random", func(t *testing.T) {
-		const numKeys = 100000
+		const numKeys = 10000
 		const numChecks = 100
 
 		st := NewState(ts)
@@ -301,13 +301,13 @@ func TestTrieProveVerify(t *testing.T) {
 			proof, ok := st.ProveStr(kpairs[idx].key)
 			t.Logf("proof len: %d, key len: %d", len(proof.Path), len(proof.Key))
 			require.True(t, ok)
-			err := VerifyProofPath(st.ts, proof)
+			err := VerifyProof(st.ts, proof)
 			require.NoError(t, err)
 
 		}
 	})
 	t.Run("random iscp style", func(t *testing.T) {
-		const numKeys = 100000
+		const numKeys = 10000
 		const numSC = 100
 		const numChecks = 100
 
@@ -326,7 +326,7 @@ func TestTrieProveVerify(t *testing.T) {
 			proof, ok := st.ProveStr(kpairs[idx].key)
 			t.Logf("proof len: %d, key len: %d", len(proof.Path), len(proof.Key))
 			require.True(t, ok)
-			err := VerifyProofPath(st.ts, proof)
+			err := VerifyProof(st.ts, proof)
 			require.NoError(t, err)
 
 		}
@@ -464,5 +464,33 @@ func TestTrieStats(t *testing.T) {
 			}
 		}
 		//t.Logf("\nTRIE: \n%s\n", st.StringTrie())
+	})
+}
+
+func TestProofAbsence(t *testing.T) {
+	suite := bn256.NewSuite()
+	ts, err := kzg.TrustedSetupFromFile(suite, "example.setup")
+	require.NoError(t, err)
+
+	t.Run("1", func(t *testing.T) {
+		st := NewState(ts)
+		require.True(t, st.Check(ts))
+
+		for _, kv := range kvpairs1 {
+			st.UpdateStr(kv.key, kv.value)
+			st.FlushCaches()
+
+			proof, ok := st.ProveStr(kv.key)
+			require.True(t, ok)
+			err := VerifyProof(st.ts, proof)
+			require.NoError(t, err)
+		}
+		t.Logf("\nTRIE: \n%s\n", st.StringTrie())
+		for _, kv := range kvpairsNotInState {
+			proof, ok := st.ProveStr(kv.key)
+			require.False(t, ok)
+			err := VerifyProof(st.ts, proof)
+			require.NoError(t, err)
+		}
 	})
 }

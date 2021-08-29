@@ -31,6 +31,24 @@ var kvpairs1 = []*kvpair{
 	{"abrak3abc", "12"},
 }
 
+var kvpairsNotInState = []*kvpair{
+	{"a+", "1"},
+	{"ab-", "2"},
+	{"ac7", "3"},
+	{"abrakadabra_longlong", "4"},
+	{"abrak2adab%", "5"},
+	{"abrak1adabra&", "6"},
+	{"abrak3adabra*", "7"},
+	{"abrak2*", "8"},
+	{"abrak3!!", "9"},
+	{"abrak3a---", "10"},
+	{"abrak3ab===", "11"},
+	{"abrak3abc...", "12"},
+	{"abrak3a-=", "10"},
+	{"abrak3ab-+", "11"},
+	{"abrak3abc  ", "12"},
+}
+
 func UpdateKeys(st *State, pairs []*kvpair) kyber.Point {
 	for _, kv := range pairs {
 		st.UpdateStr(kv.key, kv.value)

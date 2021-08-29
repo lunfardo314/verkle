@@ -299,7 +299,7 @@ func (st *State) Check(ts *kzg.TrustedSetup) bool {
 	if !ok {
 		return false
 	}
-	return VerifyProofPath(ts, rootProof) == nil
+	return VerifyProof(ts, rootProof) == nil
 }
 
 func (st *State) StringTrie() string {

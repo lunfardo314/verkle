@@ -42,7 +42,7 @@ func BenchmarkProveVerify(b *testing.B) {
 		idx := rand.Intn(len(kpairs))
 		proof, _ := st.ProveStr(kpairs[idx].key)
 		//b.Logf("proof len: %d, key len: %d", len(proof.Path), len(proof.Key))
-		err := VerifyProofPath(st.ts, proof)
+		err := VerifyProof(st.ts, proof)
 		if err != nil {
 			panic(err)
 		}
@@ -98,7 +98,7 @@ func BenchmarkVerify(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			err := VerifyProofPath(st.ts, proofs[i])
+			err := VerifyProof(st.ts, proofs[i])
 			if err != nil {
 				panic(err)
 			}
