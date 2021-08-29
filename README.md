@@ -9,32 +9,26 @@ The repository contains an implementation of the so-called [_verkle tree_](https
 The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hash function
 as a commitment method as in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
 The approach offers significant advantages with regard to performance, specifically data size of data structures.
-Please find below references to the extensive literature about _KZG commitments_ and _verkle trees_.
 
 The implementation uses _trusted setup_ completely in Lagrange basis.
 Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to the articles it is based upon.
 
 The implementation mostly follows structure of the [Merkle Patricia Tree](https://eth.wiki/fundamentals/patricia-tree).
 Instead of being _hexary_, it uses 257 characters in the trie alphabet:
-256 possible values of the byte plus one for the commitment to the terminal value, hence the _257-ary trie_.
+256 possible values of the byte plus one for the optional commitment to the terminal value in each node.
+So we need to commit to 257-long vector in each node, i.e. constant `d = 257` in the trusted setup, hence the _257-ary trie_.
 
-
-The rationale for this: we aim to use original keys of arbitrary length without hashing them and making all 32 byte long.
-This result in shorter keys, more predictable and slowly changing structure of the trie.
+Original keys of arbitrary length without hashing them to 32 bytes are used.
+This results in shorter keys, more predictable and slower changing structure of the trie.
 Any key can point to the terminal value and same time can be a prefix in other keys.
-So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value.
-
-From the perspective of `KZG commitments`, implementation uses constant `d = 257` in the trusted setup.
-
-As it is seen from the implementation, the special 257th "character" does not introduce significant overhead,
-while it has some advantages, such as much simple encoding of the trie node.
+As it is seen from the implementation, the special 257th "character" does not introduce any significant overhead.
 
 ## Repository and dependencies
 
 The repository contains:
 - `kzg` package with the implementation of the _KZG commitments_ and the _trusted setup_.
-- `kzg_setup`, the CLI program to create _trusted setups_ and store them into the file.
-- `trie` package which contains implementation of the _257-ary trie_ as well as corresponding tests and benchmarks.
+- `kzg_setup`, the CLI program to create a _trusted setup_ from a secret and store it into the file.
+- `trie` package contains implementation of the _trie_ as well as corresponding tests and benchmarks.
 
 The implementation of _KZG commitments_ uses [DEDIS Advanced Crypto Library for Go Kyber v3](https://github.com/dedis/kyber)
 and its `bn256` bilinear pairing suite as cryptographic primitives.
@@ -46,21 +40,20 @@ The implementation follows formulas presented [in this article](https://hackmd.i
 The state is assumed to be an arbitrary collection of the key/value pairs.
 Empty key (`nil` or `""`) in the implementation is a valid key. The state assumes the empty key always contains
 serialized binary value of the _trusted setup_ upon which the commitments are calculated.
-So, you can always check if the root commitment contains the commitment to the trusted setup itself.
-The root commitment of the initial state depends of the trusted setup and is predictable.
+So, you can always check if the root commitment contains the commitment to the _trusted setup_ itself.
 
-**Determinism of the state**: the state is a set of key/value pairs, i.e. no matter the order of how those key/value pairs were
-added to the storage and trie, the state (and the commitment to it) is the same.
+**Determinism of the state**: the state is a **set** of key/value pairs, i.e. no matter the order
+of how those key/value pairs were added to the storage and trie, the state (and the commitment to it) is the same.
 
 The key/value store is and implementation of `trie.KVStore` interface.
 
-The state is implemented as `trie.State`. It contains partitions for key/values pairs of the state, for the trie itself.
+The state is implemented as `trie.State`. It contains partitions for key/values pairs of the state and for the trie itself.
 It also contains the cache for keeping nodes being updated during bulky state update operations to make them atomic.
 
 ### The trie
 
-The trie is represented as a collection of key/value pairs in the `trie` partition of the state. Each key/value pair in the trie
-represents a _node_ of the trie in serialized form.
+The trie is represented as a collection of key/value pairs in the `trie` partition of the state.
+Each key/value pair in the trie represents a _node_ of the trie in serialized form.
 
 ``` Go
 type Node struct {
@@ -70,7 +63,7 @@ type Node struct {
 }
 ```
 
-Each node can keep commitments to its children and to terminal value as one vector.
+Each node can keep commitments to its up to 256 children and to the terminal value as one vector.
 
 The _ith_ child has a commitment to it in `children[i]` or `nil` if there's not commitment to it.
 Commitment is represented by `kyber.Point` interface which here is a point on the curve `G1`.
@@ -86,15 +79,15 @@ Commitment to the node is the commitment to the vector `V`.
 
 The `pathFragment` is a slice (can be empty) of bytes taken from the key of the key/value pair in the state.
 
-Lest say the node `N` is stored in the trie under some key `K`. Concatenation `P = K || N.pathFragment` means the following:
+Let's say the node `N` is stored in the trie under the key `K`. Concatenation `P = K || N.pathFragment` means the following:
 * if `N` contains commitment to the terminal value `V`, the `P` is the key of that value in the state: `P: V`.
 * for any not `nil` child with index `0 <= i < 256`, the `Pi = P || {i} = K || N.pathFragment || {i}` is the key of the node
-  which contains the _vector_ of commitments of the child. Here `{i}` is a slice of one byte with value `i`.
+  with the _vector_ of commitments of the child. Here `{i}` is a slice of one byte with value `i`.
 
 So, whenever we need a proof for the key/value pair `K: V` in the state, we start from the empty key which corresponds to the
 root node and then recursively follow the path by concatenating corresponding `pathFragment` values
-and picking corresponding byte of the next child in each node. The process finished when we
-reach our key and the node which contains commitment of the terminal value `V`.
+and picking corresponding byte of the next child in each node. The process is finished when we
+reach our key and the corresponding node which contains commitment of the terminal value `V`.
 
 ## Example
 
@@ -116,7 +109,7 @@ The resulting 257-ary verkle trie will look like this:
 
 On _Intel(R) Core(TM) i7-7600U CPU @ 2.80GHz_ laptop.
 
-* building a trie: _0.67 ms_ per included key
+* building a trie: _0.67 ms_ per 1 added key/value pair
 * generating proof from the state in memory with 100000 keys: _168 ms per proof of 1 key/value_. It is an expensive
   operation because always requires `K x 257` operations on the curve, where `K` is number of nodes in the proof.
 * verifying proof (state with 100000 keys): _12.6 ms per verification_
@@ -128,17 +121,17 @@ With 100000 key/value pairs in the state generated uniformly randomly with max k
 * keys/nodes in the trie: _128648_ (excess factor _28%_)
 * average length of the key in the trie: _2.6 bytes_
 * average number of children in the node: _1.78_
-* number of nodes with only terminal values (no children): _98685_ (_76.7%_)
+* number of nodes with only terminal value (no children): _98685_ (_76.7%_)
 * 96% of nodes has 3 or fewer children
 * distribution of length of proofs: _22%_ have length 3, _78%_ have length 4
 
 With 100000 key/value pairs in the state generated with max key size _60_ assuming
-realistic state patterns of the state of the IOTA Smart Contract chain: first 4-6 bytes are much more predictable.
+realistic patterns of the state of the IOTA Smart Contract chain: first 4-6 bytes identified partition of the smart contract.
 
 * keys/nodes in the trie: _107940_ (excess factor _7%_)
 * average length of the key in the trie: _6.07 bytes_
 * average number of children in the node: _1.93_
-* number of nodes with only terminal values (no children): _98497_ (_91.2%_)
+* number of nodes with only terminal value (no children): _98497_ (_91.2%_)
 * 96% of nodes has 1 or 2 children
 * distribution of length of the proof: _38%_ have length _4_, _49%_ have length _5_, _13%_ have length _6_
 
@@ -164,4 +157,4 @@ The keys are very short due to the big width of the tree.
 * [Experimental KZG implementation](https://hackmd.io/@Evaldas/SJ9KHoDJF). Math of this implementation explained in detail
 
 ## Acknowledgements
-Special thanks to _Dankrad Feist_ for pointing out my crypto-mathematical mistakes.
+Special thanks to _Dankrad Feist_ for pointing out my crypto-mathematical mistakes
