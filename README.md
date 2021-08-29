@@ -24,7 +24,7 @@ This result in shorter keys, more predictable and slowly changing structure of t
 Any key can point to the terminal value and same time can be a prefix in other keys.
 So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value.
 
-From the perspective of `KZG commitments`, we are using constant `d=257` in the trusted setup.
+From the perspective of `KZG commitments`, implementation uses constant `d = 257` in the trusted setup.
 
 As it is seen from the implementation, the special 257th "character" does not introduce significant overhead,
 while it has some advantages, such as much simple encoding of the trie node.
