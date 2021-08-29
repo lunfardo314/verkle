@@ -6,32 +6,25 @@ The trusted setup must be created in a secure environment. This is a responsibil
 ## General
 The repository contains an implementation of the so-called [_verkle tree_](https://math.mit.edu/research/highschool/primes/materials/2018/Kuszmaul.pdf) as a 257-ary [trie](https://en.wikipedia.org/wiki/Trie), a prefix tree.
 
-The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hashing
-as a commitment method used in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
+The implementation uses _polynomial KZG (aka Kate) commitments_ for _vector commitments_ instead of hash function
+as a commitment method as in [Merkle trees](https://en.wikipedia.org/wiki/Merkle_tree).
 The approach offers significant advantages with regard to performance, specifically data size of data structures.
 Please find below references to the extensive literature about _KZG commitments_ and _verkle trees_.
 
 The implementation uses _trusted setup_ completely in Lagrange basis.
-Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to articles it is based upon.
+Please find here all [math and formulas](https://hackmd.io/@Evaldas/SJ9KHoDJF) as well as references to the articles it is based upon.
 
-The implementation uses a bit unconventional approach to the data structure of the trie, the _257-ary trie_.
-The rationale for this: we aim to use original keys of arbitrary length without hashing them as in Patricia tries.
+The implementation mostly follows structure of the [Merkle Patricia Tree](https://eth.wiki/fundamentals/patricia-tree).
+Instead of being _hexary_, it uses 257 characters in the trie alphabet:
+256 possible values of the byte plus one for the commitment to the terminal value, hence the _257-ary trie_.
+
+The rationale for this: we aim to use original keys of arbitrary length without hashing them and making all 32 byte long.
+This result in shorter keys, more predictable and slowly changing structure of the trie.
 Any key can point to the terminal value and same time can be a prefix in other keys.
-So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value, hence `257`.
+So, in each node, we need to commit to up to `256` children (max byte value) plus, possibly, to one terminal value.
 
-We see benefits in the approach, due to its properties:
-
-* the trie is wide, so proofs are short.
-* use of bytes as child indices makes encoding simpler than in _hexary Patricia trie_.
-* keys used in the trie are short
-* nodes are reused for commitments to terminal values
-* keys are not randomized by hashing, so it represents structure of the state on the chain.
-  It makes it possible, for example, to have commitments to partitions of state, say state of one smart contract
-  or even one data structure in the state, say an array of a dictionary.
-* adding to or updating a key/value pair never deletes keys from the trie, only updates
-  a small amount of values and/or adds one new key/value pair.
-
-As it is seen from the implementation, use of 257 instead of more conventional 256 trie does not add any significant overhead.
+As it is seen from the implementation, the special 257th "character" does not introduce significant overhead,
+while it has some advantages, such as much simple encoding of the trie node.
 
 ## Repository and dependencies
 
@@ -48,16 +41,18 @@ The implementation follows formulas presented [in this article](https://hackmd.i
 
 ### The state
 The state is assumed to be an arbitrary collection of the key/value pairs.
-Empty key (`nil` or `""`) in the implementation is a valid key. The state assumes the empty key always contains  
-serialized binary value of the _trusted setup_.
+Empty key (`nil` or `""`) in the implementation is a valid key. The state assumes the empty key always contains
+serialized binary value of the _trusted setup_ upon which the commitments are calculated.
+So, you can always check if the root commitment contains the commitment to the trusted setup itself.
+The root commitment of the initial state depends of the trusted setup and is predictable.
 
 **Determinism of the state**: the state is a set of key/value pairs, i.e. no matter the order of how those key/value pairs were
 added to the storage and trie, the state (and the commitment to it) is the same.
 
-The key/value store is and impementation of `trie.KVStore` interface.
+The key/value store is and implementation of `trie.KVStore` interface.
 
 The state is implemented as `trie.State`. It contains partitions for key/values pairs of the state, for the trie itself.
-It also contains cache for keeping nodes being updated during bulky state update operations.
+It also contains the cache for keeping nodes being updated during bulky state update operations to make them atomic.
 
 ### The trie
 
@@ -72,26 +67,26 @@ type Node struct {
 }
 ```
 
-Each node can keep commitments to its children and to terminal value.
+Each node can keep commitments to its children and to terminal value as one vector.
 
 The _ith_ child has a commitment to it in `children[i]` or `nil` if there's not commitment to it.
 Commitment is represented by `kyber.Point` interface which here is a point on the curve `G1`.
 
-The commitment to the terminal value, if exists, is not `nil` and is equal to the `blake2b` hash of the data itself, adjusted
-to the underlying field of the curves. It represented by `kyber.Scalar` interface.
+The commitment to the terminal value, if exists, is not `nil` and is equal to the `blake2b` hash of the data itself,
+adjusted to the underlying field of the curves. It represented by `kyber.Scalar` interface.
 
-Each _node_ represents a _vector_ `V = (v0, v1, ...., v256)`. Value of `vi` is 0 if value of the underlying
-commitment is nil. Otherwise `v256` corresponds to the terminal value and other `vi` are `blke2b` hashes of
+Each _node_ represents a _vector_ `V = (v0, v1, ...., v256)` of length 257. Value of `vi` is 0 if value of the underlying
+commitment is `nil`. Otherwise, `v256` corresponds to the terminal value and other `vi` are `blake2b` hashes of
 commitments adjusted to the field.
 
-Commitment to the node `C` is the commitment to the vector `V`.
+Commitment to the node is the commitment to the vector `V`.
 
 The `pathFragment` is a slice (can be empty) of bytes taken from the key of the key/value pair in the state.
 
 Lest say the node `N` is stored in the trie under some key `K`. Concatenation `P = K || N.pathFragment` means the following:
 * if `N` contains commitment to the terminal value `V`, the `P` is the key of that value in the state: `P: V`.
 * for any not `nil` child with index `0 <= i < 256`, the `Pi = P || {i} = K || N.pathFragment || {i}` is the key of the node
-  which contains the _vector_ of commitments of the child. Here `{i}` is a slice of one byte.
+  which contains the _vector_ of commitments of the child. Here `{i}` is a slice of one byte with value `i`.
 
 So, whenever we need a proof for the key/value pair `K: V` in the state, we start from the empty key which corresponds to the
 root node and then recursively follow the path by concatenating corresponding `pathFragment` values
@@ -144,9 +139,26 @@ realistic state patterns of the state of the IOTA Smart Contract chain: first 4-
 * 96% of nodes has 1 or 2 children
 * distribution of length of the proof: _38%_ have length _4_, _49%_ have length _5_, _13%_ have length _6_
 
-Also, the following chart shows size of keys in the trie partition in bytes:
+The following chart shows size of keys in the trie partition in bytes:
 
 <img src="trie_key_size.png"  width="300">
 
+The keys are very short due to the big width of the tree.
+
+## TODO
+
+* The function to remove a key/value pair from the state is not implemented yet.
+
 ##  Links
-TODO
+* [Constant-Size Commitments to Polynomials and Their Applications](https://www.iacr.org/archive/asiacrypt2010/6477178/6477178.pdf),
+  the original paper
+* [KZG polynomial commitments](https://dankradfeist.de/ethereum/2020/06/16/kate-polynomial-commitments.html) by Dankrad Feist
+* [PCS multiproofs using random evaluation](https://dankradfeist.de/ethereum/2021/06/18/pcs-multiproofs.html) by Dankrad Feist
+* [Verkle trees](https://vitalik.ca/general/2021/06/18/verkle.html) by Vitalik Buterin
+* [Kate Commitments: A Primer](https://hackmd.io/@tompocock/Hk2A7BD6U)
+* [DEDIS Advanced Crypto Library for Go Kyber v3](https://github.com/dedis/kyber)
+* [Modified Merkle Patricia Trie Specification](https://eth.wiki/fundamentals/patricia-tree)
+* [Experimental KZG implementation in Go](https://hackmd.io/@Evaldas/SJ9KHoDJF). Math of this implementation explained in detail
+
+## Acknowledgements
+Special thanks to _Dankrad Feist_ for pointing out my crypto-mathematical mistakes.
