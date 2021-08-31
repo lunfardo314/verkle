@@ -18,9 +18,10 @@ Instead of being _hexary_, it commits to 257-long vector in each node:
 256 possible values of the byte plus one for an optional commitment to the terminal value in each node.
 So constant `d = 257` in the trusted setup, hence the _257-ary trie_.
 
-Original keys of arbitrary length without hashing them to 32 bytes are used to build the trie.
-This results in shorter keys, more predictable and slow-changing structure of the trie.
-Any key can point to a terminal value and same time it can be a prefix in other keys.
+Keys in the trie are of arbitrary length. They are prefixes of the keys from the state's key/values storage.
+So, the structure of the trie follows the hierarchical structure of the state.
+This allows commit to partitions of the state and results in shorter keys, more predictable and slow-changing structure of the trie.
+Any key in the trie can point to a terminal value and same time it can be a prefix in other keys.
 As it is seen from the implementation, the special 257th "character" does not introduce any significant overhead.
 
 ## Repository and dependencies
@@ -144,6 +145,7 @@ The keys are very short due to the big width of the tree.
 ## TODO
 
 * The function to remove a key/value pair from the state is not implemented yet.
+* Optimize on the pattern when most (90%+) nodes are nodes which commits to terminals
 
 ##  Links
 * [Constant-Size Commitments to Polynomials and Their Applications](https://www.iacr.org/archive/asiacrypt2010/6477178/6477178.pdf),
