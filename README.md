@@ -157,6 +157,7 @@ The keys are very short due to the big width of the tree.
 * [DEDIS Advanced Crypto Library for Go Kyber v3](https://github.com/dedis/kyber)
 * [Modified Merkle Patricia Trie Specification](https://eth.wiki/fundamentals/patricia-tree)
 * [Experimental KZG implementation](https://hackmd.io/@Evaldas/SJ9KHoDJF). Math of this implementation explained in detail
+* [EIP Ethereum Improvement Proposal on verkle trees](https://notes.ethereum.org/@vbuterin/verkle_tree_eip)
 
 ## Acknowledgements
 Special thanks to _Dankrad Feist_ for pointing out my crypto-mathematical mistakes
